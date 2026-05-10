@@ -1,0 +1,72 @@
+# IC-Flow Platform 本地开发环境
+
+version: "3.8"
+
+services:
+  # ====== Redis（消息总线后端） ======
+  redis:
+    image: redis:7-alpine
+    container_name: icflow-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ====== PostgreSQL（知识管理存储） ======
+  postgres:
+    image: postgres:16-alpine
+    container_name: icflow-postgres
+    environment:
+      POSTGRES_DB: icflow
+      POSTGRES_USER: icflow
+      POSTGRES_PASSWORD: icflow_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U icflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ====== IC-Flow API 服务 ======
+  icflow-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: icflow-api
+    ports:
+      - "8000:8000"
+    environment:
+      - ICFLOW_CONFIG=/app/config/config.yaml
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=icflow
+      - POSTGRES_USER=icflow
+      - POSTGRES_PASSWORD=icflow_dev
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./src:/app/src:ro
+      - ./config:/app/config:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+    driver: local
+  postgres-data:
+    driver: local

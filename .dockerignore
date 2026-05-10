@@ -1,0 +1,43 @@
+# === IC-Flow Platform .dockerignore ===
+# 构建上下文忽略文件
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+*.egg-info
+dist
+build
+
+# 开发文件
+.git
+.gitignore
+.env
+.venv
+venv
+*.md
+**/*.md
+!README.md
+
+# 测试文件
+tests/
+*.test.py
+coverage
+htmlcov
+.coverage
+
+# 文档
+docs/
+design/
+
+# 演示脚本
+demo_*.py
+
+# 输出文件
+output*.txt
+
+# 项目配置
+pyproject.toml
+requirements.txt

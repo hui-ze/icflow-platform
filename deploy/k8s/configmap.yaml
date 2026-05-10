@@ -1,0 +1,49 @@
+# IC-Flow Platform 配置
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: icflow-config
+  namespace: icflow
+  labels:
+    app: icflow
+    component: config
+data:
+  # 应用配置
+  ICFLOW_CONFIG: /app/config/config.yaml
+  LOG_LEVEL: INFO
+  PYTHONUNBUFFERED: "1"
+
+  # Redis 消息总线
+  REDIS_HOST: icflow-redis
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+
+  # PostgreSQL 知识库
+  POSTGRES_HOST: icflow-postgres
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: icflow
+  POSTGRES_USER: icflow
+
+  # 平台设置
+  API_WORKERS: "4"
+  DEFAULT_WORKFLOW_TIMEOUT: "600"
+  MAX_CONCURRENT_WORKFLOWS: "50"
+---
+# IC-Flow Platform 命名空间
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: icflow
+  labels:
+    name: icflow
+    environment: production
+---
+# API 服务账号
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: icflow-api
+  namespace: icflow
+  labels:
+    app: icflow
+    component: api

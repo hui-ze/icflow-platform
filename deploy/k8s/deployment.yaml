@@ -1,0 +1,99 @@
+# IC-Flow Platform API 服务部署
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: icflow-api
+  namespace: icflow
+  labels:
+    app: icflow
+    component: api
+    version: v0.1.0
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: icflow
+      component: api
+  template:
+    metadata:
+      labels:
+        app: icflow
+        component: api
+        version: v0.1.0
+    spec:
+      serviceAccountName: icflow-api
+      containers:
+      - name: api
+        image: icflow-platform:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          protocol: TCP
+          name: http
+        envFrom:
+        - configMapRef:
+            name: icflow-config
+        env:
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: icflow-config
+              key: REDIS_HOST
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: icflow-config
+              key: POSTGRES_HOST
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        startupProbe:
+          httpGet:
+            path: /api/v1/health
+            port: http
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          failureThreshold: 12
+---
+# 水平自动扩缩
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: icflow-api-hpa
+  namespace: icflow
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: icflow-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
